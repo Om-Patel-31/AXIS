@@ -6,6 +6,8 @@ from tasks import TaskManager
 from notifications import NotificationManager
 from ai_assistant import AIAssistant
 from automation import AutomationManager
+from datetime import datetime
+
 
 # Load environment variables
 load_dotenv()
