@@ -1,47 +1,69 @@
 from datetime import datetime
+import uuid
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import os
+from dotenv import load_dotenv
 
-class Notification:
-    def __init__(self, message, task_id=None, notification_type="info"):
-        self.id = datetime.now().strftime("%Y%m%d%H%M%S")
-        self.message = message
-        self.task_id = task_id
-        self.type = notification_type
-        self.created_at = datetime.now()
-        self.read = False
+load_dotenv()
 
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'message': self.message,
-            'task_id': self.task_id,
-            'type': self.type,
-            'created_at': self.created_at.isoformat(),
-            'read': self.read
+class NotificationManager:
+    def __init__(self):
+        self.notifications = {}
+        self.email = os.getenv('EMAIL_USER')
+        self.password = os.getenv('EMAIL_PASSWORD')
+        self.smtp_server = os.getenv('SMTP_SERVER', 'smtp.gmail.com')
+        self.smtp_port = int(os.getenv('SMTP_PORT', '587'))
+
+    def send_notification(self, message, task_id=None):
+        notification_id = str(uuid.uuid4())
+        notification = {
+            'id': notification_id,
+            'message': message,
+            'task_id': task_id,
+            'read': False,
+            'created_at': datetime.utcnow().isoformat()
         }
+        self.notifications[notification_id] = notification
+        
+        # Send email notification if credentials are configured
+        if self.email and self.password:
+            self._send_email_notification(message)
+        
+        return notification
 
-notifications = []
+    def get_all_notifications(self):
+        return list(self.notifications.values())
 
-def add_notification(message, task_id=None, notification_type="info"):
-    notification = Notification(message, task_id, notification_type)
-    notifications.append(notification)
-    return notification
+    def get_unread_notifications(self):
+        return [n for n in self.notifications.values() if not n['read']]
 
-def get_all_notifications():
-    return [notification.to_dict() for notification in notifications]
+    def mark_notification_as_read(self, notification_id):
+        if notification_id in self.notifications:
+            self.notifications[notification_id]['read'] = True
+            return self.notifications[notification_id]
+        return None
 
-def get_unread_notifications():
-    return [notification.to_dict() for notification in notifications if not notification.read]
+    def delete_notification(self, notification_id):
+        if notification_id in self.notifications:
+            del self.notifications[notification_id]
+            return True
+        return False
 
-def mark_notification_as_read(notification_id):
-    for notification in notifications:
-        if notification.id == notification_id:
-            notification.read = True
-            return notification
-    return None
-
-def delete_notification(notification_id):
-    notification = next((n for n in notifications if n.id == notification_id), None)
-    if notification:
-        notifications.remove(notification)
-        return True
-    return False
+    def _send_email_notification(self, message):
+        try:
+            msg = MIMEMultipart()
+            msg['From'] = self.email
+            msg['To'] = self.email
+            msg['Subject'] = "AI Assistant Notification"
+            
+            msg.attach(MIMEText(message, 'plain'))
+            
+            server = smtplib.SMTP(self.smtp_server, self.smtp_port)
+            server.starttls()
+            server.login(self.email, self.password)
+            server.send_message(msg)
+            server.quit()
+        except Exception as e:
+            print(f"Failed to send email notification: {str(e)}")
