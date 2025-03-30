@@ -7,18 +7,202 @@ const notificationsPanel = document.getElementById('notifications-panel');
 const notificationsList = document.getElementById('notifications-list');
 const notificationToggle = document.getElementById('notification-toggle');
 const notificationCount = document.getElementById('notification-count');
+const voiceToggle = document.getElementById('voice-toggle');
+const voiceIndicator = document.getElementById('voice-indicator');
+const voiceOutput = document.getElementById('voice-output');
+const memoryContent = document.getElementById('memory-content');
+const organizeWorkForm = document.getElementById('organize-work-form');
+const scheduleForm = document.getElementById('schedule-form');
+
+// State
+let isListening = false;
 
 // Event Listeners
 taskForm.addEventListener('submit', handleTaskSubmit);
 notificationToggle.addEventListener('click', toggleNotifications);
+voiceToggle.addEventListener('click', toggleVoiceInput);
+organizeWorkForm.addEventListener('submit', handleOrganizeWork);
+scheduleForm.addEventListener('submit', handleCreateSchedule);
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     loadTasks();
     loadNotifications();
+    loadMemory();
 });
 
-// Task Management
+// Voice Input
+async function toggleVoiceInput() {
+    if (!isListening) {
+        isListening = true;
+        voiceIndicator.classList.add('active');
+        voiceToggle.textContent = '⏹';
+        
+        try {
+            const response = await fetch(`${API_BASE_URL}/ai/process-voice`, {
+                method: 'POST'
+            });
+            const data = await response.json();
+            
+            voiceOutput.textContent = data.command;
+            processVoiceCommand(data.intent);
+        } catch (error) {
+            console.error('Error processing voice input:', error);
+            voiceOutput.textContent = 'Error processing voice input';
+        } finally {
+            isListening = false;
+            voiceIndicator.classList.remove('active');
+            voiceToggle.textContent = '🎤';
+        }
+    } else {
+        isListening = false;
+        voiceIndicator.classList.remove('active');
+        voiceToggle.textContent = '🎤';
+    }
+}
+
+async function processVoiceCommand(intent) {
+    // Process the AI's understanding of the command
+    console.log('Processing intent:', intent);
+    // Add specific actions based on intent
+}
+
+// Memory Management
+async function loadMemory() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/ai/memory`);
+        const memories = await response.json();
+        renderMemory(memories);
+    } catch (error) {
+        console.error('Error loading memory:', error);
+    }
+}
+
+function renderMemory(memories) {
+    memoryContent.innerHTML = '';
+    memories.forEach(memory => {
+        const div = document.createElement('div');
+        div.className = 'memory-item';
+        div.innerHTML = `
+            <div class="memory-content">${memory.content}</div>
+            <div class="memory-meta">
+                <span class="memory-category">${memory.category}</span>
+                <span class="memory-date">${new Date(memory.created_at).toLocaleString()}</span>
+            </div>
+        `;
+        memoryContent.appendChild(div);
+    });
+}
+
+// Academic Tools
+async function generateFlashcards() {
+    const content = document.getElementById('flashcard-content').value;
+    if (!content) return;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/ai/generate-flashcards`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ content }),
+        });
+        const flashcards = await response.json();
+        renderFlashcards(flashcards);
+    } catch (error) {
+        console.error('Error generating flashcards:', error);
+    }
+}
+
+function renderFlashcards(flashcards) {
+    const container = document.getElementById('flashcards-container');
+    container.innerHTML = '';
+    
+    flashcards.forEach(card => {
+        const div = document.createElement('div');
+        div.className = 'flashcard';
+        div.innerHTML = `
+            <div class="flashcard-question">${card.question}</div>
+            <div class="flashcard-answer hidden">${card.answer}</div>
+        `;
+        div.addEventListener('click', () => {
+            div.querySelector('.flashcard-answer').classList.toggle('hidden');
+        });
+        container.appendChild(div);
+    });
+}
+
+async function summarizeContent() {
+    const content = document.getElementById('summary-content').value;
+    if (!content) return;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/ai/summarize`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ content }),
+        });
+        const data = await response.json();
+        document.getElementById('summary-output').textContent = data.summary;
+    } catch (error) {
+        console.error('Error summarizing content:', error);
+    }
+}
+
+// Automation
+async function handleOrganizeWork(event) {
+    event.preventDefault();
+    
+    const subject = document.getElementById('subject').value;
+    const content = document.getElementById('content').value;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/automation/organize-work`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ subject, content }),
+        });
+        
+        if (response.ok) {
+            organizeWorkForm.reset();
+            showNotification('Work organized successfully');
+        }
+    } catch (error) {
+        console.error('Error organizing work:', error);
+        showNotification('Error organizing work', 'error');
+    }
+}
+
+async function handleCreateSchedule(event) {
+    event.preventDefault();
+    
+    const subject = document.getElementById('exam-subject').value;
+    const examDate = document.getElementById('exam-date').value;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/automation/create-schedule`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ subject, exam_date: examDate }),
+        });
+        
+        if (response.ok) {
+            scheduleForm.reset();
+            showNotification('Study schedule created successfully');
+        }
+    } catch (error) {
+        console.error('Error creating schedule:', error);
+        showNotification('Error creating schedule', 'error');
+    }
+}
+
+// Existing Task Management
 async function loadTasks() {
     try {
         const response = await fetch(`${API_BASE_URL}/tasks`);
@@ -156,4 +340,16 @@ function updateNotificationCount(notifications) {
 
 function toggleNotifications() {
     notificationsPanel.classList.toggle('hidden');
+}
+
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
 }

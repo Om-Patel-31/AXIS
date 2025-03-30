@@ -11,13 +11,27 @@
     <div class="container">
         <header>
             <h1>AI Assistant Task Manager</h1>
-            <div class="notification-bell">
-                <span id="notification-count" class="notification-badge">0</span>
-                <button id="notification-toggle">🔔</button>
+            <div class="header-controls">
+                <div class="notification-bell">
+                    <span id="notification-count" class="notification-badge">0</span>
+                    <button id="notification-toggle">🔔</button>
+                </div>
+                <button id="voice-toggle" class="voice-toggle">🎤</button>
             </div>
         </header>
 
         <main>
+            <div class="ai-assistant-panel">
+                <div class="voice-status">
+                    <div id="voice-indicator" class="voice-indicator"></div>
+                    <div id="voice-output" class="voice-output"></div>
+                </div>
+                <div class="ai-memory">
+                    <h3>AI Memory</h3>
+                    <div id="memory-content" class="memory-content"></div>
+                </div>
+            </div>
+
             <div class="task-form">
                 <h2>Create New Task</h2>
                 <form id="task-form">
@@ -40,6 +54,58 @@
             <div class="tasks-section">
                 <h2>Your Tasks</h2>
                 <div id="tasks-list" class="tasks-list"></div>
+            </div>
+
+            <div class="academic-tools">
+                <h2>Academic Tools</h2>
+                <div class="tools-grid">
+                    <div class="tool-card">
+                        <h3>Flashcards</h3>
+                        <textarea id="flashcard-content" placeholder="Enter content to generate flashcards"></textarea>
+                        <button onclick="generateFlashcards()">Generate Flashcards</button>
+                        <div id="flashcards-container" class="flashcards-container"></div>
+                    </div>
+                    <div class="tool-card">
+                        <h3>Content Summarizer</h3>
+                        <textarea id="summary-content" placeholder="Enter content to summarize"></textarea>
+                        <button onclick="summarizeContent()">Summarize</button>
+                        <div id="summary-output" class="summary-output"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="automation-section">
+                <h2>Automation</h2>
+                <div class="automation-grid">
+                    <div class="automation-card">
+                        <h3>Organize School Work</h3>
+                        <form id="organize-work-form">
+                            <div class="form-group">
+                                <label for="subject">Subject</label>
+                                <input type="text" id="subject" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="content">Content</label>
+                                <textarea id="content" required></textarea>
+                            </div>
+                            <button type="submit">Organize</button>
+                        </form>
+                    </div>
+                    <div class="automation-card">
+                        <h3>Study Schedule</h3>
+                        <form id="schedule-form">
+                            <div class="form-group">
+                                <label for="exam-subject">Subject</label>
+                                <input type="text" id="exam-subject" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="exam-date">Exam Date</label>
+                                <input type="datetime-local" id="exam-date" required>
+                            </div>
+                            <button type="submit">Create Schedule</button>
+                        </form>
+                    </div>
+                </div>
             </div>
 
             <div id="notifications-panel" class="notifications-panel hidden">
