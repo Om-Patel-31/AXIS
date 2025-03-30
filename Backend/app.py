@@ -4,7 +4,7 @@ app = Flask(__name__)
 
 tasks = []  # This will hold tasks in memory
 
-@app.route('/tasks', methods=['GET', 'POST'])
+@app.route("/tasks", methods=['GET', 'POST'])
 def handle_tasks():
     if request.method == 'POST':
         task = request.json.get('task')
